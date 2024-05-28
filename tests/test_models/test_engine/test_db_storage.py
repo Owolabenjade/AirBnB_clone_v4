@@ -68,8 +68,8 @@ test_db_storage.py'])
                             "{:s} method needs a docstring".format(func[0]))
 
 
-class TestFileStorage(unittest.TestCase):
-    """Test the FileStorage class"""
+class TestDBStorage(unittest.TestCase):
+    """Test the DBStorage class"""
     @unittest.skipIf(models.storage_t != 'db', "not testing db storage")
     def test_all_returns_dict(self):
         """Test that all returns a dictionaty"""
@@ -78,11 +78,39 @@ class TestFileStorage(unittest.TestCase):
     @unittest.skipIf(models.storage_t != 'db', "not testing db storage")
     def test_all_no_class(self):
         """Test that all returns all rows when no class is passed"""
+        self.assertEqual(len(models.storage.all()), len(models.storage.all(None)))
 
     @unittest.skipIf(models.storage_t != 'db', "not testing db storage")
     def test_new(self):
         """test that new adds an object to the database"""
+        new_state = State(name="California")
+        models.storage.new(new_state)
+        self.assertIn(new_state, models.storage.all(State).values())
 
     @unittest.skipIf(models.storage_t != 'db', "not testing db storage")
     def test_save(self):
-        """Test that save properly saves objects to file.json"""
+        """Test that save properly saves objects to the database"""
+        new_state = State(name="Nevada")
+        models.storage.new(new_state)
+        models.storage.save()
+        self.assertIn(new_state, models.storage.all(State).values())
+
+    @unittest.skipIf(models.storage_t != 'db', "not testing db storage")
+    def test_get(self):
+        """Test the get method"""
+        new_state = State(name="Arizona")
+        models.storage.new(new_state)
+        models.storage.save()
+        self.assertEqual(models.storage.get(State, new_state.id), new_state)
+        self.assertIsNone(models.storage.get(State, "nonexistent_id"))
+
+    @unittest.skipIf(models.storage_t != 'db', "not testing db storage")
+    def test_count(self):
+        """Test the count method"""
+        initial_count = models.storage.count()
+        self.assertEqual(models.storage.count(State), len(models.storage.all(State)))
+        new_state = State(name="Texas")
+        models.storage.new(new_state)
+        models.storage.save()
+        self.assertEqual(models.storage.count(), initial_count + 1)
+        self.assertEqual(models.storage.count(State), len(models.storage.all(State)))
